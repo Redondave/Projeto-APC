@@ -10,6 +10,7 @@ typedef struct Jogador {
 
 int DIFICULDADE = 1;
 int first = 1;
+FILE *fd;
 
 int initialScreen();
 void begingame();
@@ -112,7 +113,7 @@ void displayconfig()
         scanf("%c", &confirm);
         if (tolower(confirm) == 'y')
         {
-            FILE *fd = fopen("ranking.txt", "w");
+            fd = fopen("ranking.txt", "w");
             fclose(fd);
             printf("Ranking apagado com sucesso!\nPressione [Enter]...\n");
             scanf("%c", &confirm);
@@ -137,5 +138,17 @@ void displayconfig()
 
 void displayranking()
 {
-
+    printf("*** RANKING ***\n\n");
+    char confirm, nome[20];
+    int pont;
+    fd = fopen("ranking.txt", "r");
+    while (fscanf(fd, "%s %i", nome, &pont) != EOF)
+    {
+        printf("%s %i\n", nome, pont);
+    }
+    scanf("%c", &confirm);
+    fclose(fd);
+    printf("\nPressione [Enter]...\n");
+    scanf("%c", &confirm);
+    initialScreen();
 }
