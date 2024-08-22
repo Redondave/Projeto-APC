@@ -12,13 +12,15 @@ Jogador player;
 int DIFICULDADE = 1;
 int first = 1;
 int vidas = 5;
-int victory = 0;
 int done = 0;
+int games = 0;
+long offset = 0;
 int x, y;
 FILE *fd = NULL;
 FILE *fp = NULL;
 char star;
 char mat_in[4][4], sum_in[2][8], cor_in[4][4];
+char mat_in2[5][5], sum_in2[5][5], cor_in2[5][5];
 char mat_it[6][6], sum_it[2][12], cor_it[6][6];
 char mat_ad[7][7], sum_ad[2][14], cor_ad[7][7];
 
@@ -28,6 +30,8 @@ void begingame();
 void game_loop(int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size]);
 void displayconfig();
 void displayranking();
+void rankingUpdate();
+int compare(const void *a, const void *b);
 int main()
 {
     char temp;
@@ -37,6 +41,7 @@ int main()
         printf("Digite Seu Nome: ");
         scanf("%[^\n]", player.nome);
         scanf("%c", &temp);
+        player.pontuacao = 0;
         first = 0;
     }
     initialScreen();
@@ -57,7 +62,13 @@ int initialScreen()
     // obter o input do usuário para começar o jogo
         scanf("%i", &escolha);
         if (escolha == 4)
+        {
+            if (fp != NULL)
+                fclose(fp);
+            if (fd != NULL)
+                fclose(fd);
             exit(0);
+        }
         else if (escolha == 3)
             displayranking();
         else if (escolha == 2)
@@ -65,7 +76,7 @@ int initialScreen()
         else if (escolha == 1)
             begingame();
         else
-        {   
+        {
             printf("Digite uma opcao existente!\n");
             printf("\nDigite a opcao desejada: ");
         }
@@ -76,11 +87,21 @@ int initialScreen()
 void begingame()
 {
     //(guardar numeros em uma matriz, corretos, e soma das linhas e colunas em vetores de char)
+    if (games == 4)
+    {
+        games = 0;
+        fclose(fp);
+        DIFICULDADE++;
+    }
     if (DIFICULDADE == 1)
     {
         char *name = "iniciante.txt";
-        load_m(fp, 4, cor_in, mat_in, sum_in, name);
-        game_loop(4, cor_in, mat_in, sum_in);
+        int size = (games == 3) ? 5 : 4;
+        if (games == 3)
+            load_m(fp, 5, cor_in2, mat_in2, sum_in2, name);
+        else
+            load_m(fp, 4, cor_in, mat_in, sum_in, name);
+        game_loop(size, cor_in, mat_in, sum_in);
     }
     else if (DIFICULDADE == 2)
     {
@@ -88,23 +109,26 @@ void begingame()
         load_m(fp, 6, cor_it, mat_it, sum_it, name);
         game_loop(6, cor_it, mat_it, sum_it);
     }
-    else
+    else if (DIFICULDADE == 3)
     {
         char *name = "avancado.txt";
         load_m(fp, 7, cor_ad, mat_ad, sum_ad, name);
         game_loop(7, cor_ad, mat_ad, sum_ad);
     }
-    // salvar a pontuação no struct do usuario
-    // ordenar o ranking
-    // fechar o ranking e voltar para tela inicial
+    else
+    {
+        printf("Parabens!! Voce zerou o jogo!\nPressione [Enter]...\n");
+        scanf("%c", &star);
+        exit(0);
+    }
 }
 
 void game_loop(int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size])
 {
     char conf;
-    int points;
-    char aux[3];
-    while(vidas > 0 || victory == 0)
+    int scores = 0;
+    int aux;
+    while(vidas > 0)
     {
         // dar o clear na tela
         system("cls");
@@ -135,65 +159,74 @@ void game_loop(int size, char correct[size][size], char matriz[size][size], char
         printf("Escolha a linha e coluna a serem apagadas: ");
         scanf("%i %i", &x, &y);
         x--;
-        y--; 
+        y--;
         // fazer o apagamento / erro
         if (correct[x][y] == '0')
         {
             printf("Parabens, voce apagou um numero certo!\n");
+            correct[x][y] = ' ';
             scanf("%c", &conf);
             matriz[x][y] = ' ';
             // checar por linhas completas
             for (int i = 0; i < size; i++)
             {
-                if (matriz[x][i] != ' ')
-                    points += (matriz[x][i] - 48);
+                if (correct[x][i] == '0')
+                    scores++;
             }
-            aux[0] = sum[1][y];
-            aux[1] = sum[1][y + 1];
-            aux[2] = '\0';
-            if (points == (atoi(aux)))
+            if (scores == 0)
             {
                 printf("\nParabens, voce fechou uma linha!\n");
                 done++;
-                sum[1][y] = ' ';
-                sum[1][y + 1] = ' ';
+                sum[1][(x * 2)] = ' ';
+                sum[1][(x * 2) + 1] = ' ';
             }
+            scores = 0;
             // checar por colunas completas
             for (int i = 0; i < size; i++)
             {
-                if (matriz[i][y] != ' ')
-                    points += (matriz[x][i] - 48);
+                if (correct[i][y] == '0')
+                    scores++;
             }
-            aux[0] = sum[0][x];
-            aux[1] = sum[0][x + 1];
-            aux[2] = '\0';
-            if (points == (sum[0][x] + sum[0][x + 1] - 96))
+            if (scores == 0)
             {
                 printf("\nParabens, voce fechou uma coluna!\n");
                 done++;
-                sum[1][x] = ' ';
-                sum[1][x + 1] = ' ';
+                sum[0][(y * 2)] = ' ';
+                sum[0][(y * 2) + 1] = ' ';
             }
+            scores = 0;
             printf("Pressione [Enter]...");
             scanf("%c", &conf);
         }
         else
         {
             printf("Errou! Tente de novo...\n");
-            printf("Pressione [Enter]...");
+            printf("Pressione [Enter]...\n");
+            scanf("%c", &conf);
             scanf("%c", &conf);
             vidas--;
         }
         // checar condição de vitoria
         if (done == (size * 2))
         {
-            printf("Parabéns, Voce ganhou o jogo!\nPressione [Enter]...");
+            printf("Parabens, Voce ganhou o jogo!\nPressione [Enter]...");
             scanf("%c", &conf);
+            // salvar a pontuação no struct do usuario
             player.pontuacao += (DIFICULDADE * 50);
+            games++;
+            done = 0;
+            break;
         }
-        points = 0;
         // continuar o jogo
     }
+    if (vidas == 0)
+    {
+        printf("As vidas acabaram... tente de novo outra vez\nPressione [Enter]...");
+        scanf("%c", &conf);
+    }
+    vidas = 5;
+    rankingUpdate();
+    initialScreen();
 }
 
 void displayconfig()
@@ -211,6 +244,7 @@ void displayconfig()
     else if (escolha == 2)
     {
         printf("Selecione o modo de dificuldade\n\n1 - Iniciante\n2 - Intermediario\n3 - Dificil\n");
+        printf("\nDificuldade: ");
         scanf("%i", &escolha);
         scanf("%c", &confirm);
         if (escolha < 1 || escolha > 3)
@@ -218,7 +252,7 @@ void displayconfig()
             printf("Escolha uma dificuldade existente!\nPressione [Enter]...\n");
             scanf("%c", &confirm);
             displayconfig();
-        }  
+        }
         else
         {
             DIFICULDADE = escolha;
@@ -226,6 +260,7 @@ void displayconfig()
                 fclose(fp);
             printf("Dificuldade alterada com sucesso!\nPressione [Enter]...\n");
             scanf("%c", &confirm);
+            games = 0;
             displayconfig();
         }
     }
@@ -251,7 +286,7 @@ void displayconfig()
             displayconfig();
         }
     }
-    else 
+    else
     {
         printf("Escolha uma opcao existente!\nPressione [Enter]...\n");
         scanf("%c", &confirm);
@@ -276,27 +311,98 @@ void displayranking()
     initialScreen();
 }
 
-void load_m(FILE *fp, int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size], char* name)
+void load_m(FILE *arquivo, int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size], char* name)
 {
-    if (fp == NULL)
-        fp = fopen(name, "r");
+    if (arquivo == NULL)
+    {
+        arquivo = fopen(name, "r");
+        offset = 0;
+    }
+    else
+        fseek(arquivo, offset, SEEK_SET);
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
-            fscanf(fp, "%c", &matriz[i][j]);
-        fscanf(fp, "%c", &star);
+        {
+            fread(&matriz[i][j], sizeof(char), 1, arquivo);
+            offset++;
+        }
+        fread(&star, sizeof(char), 1, arquivo);
+        offset++;
     }
     for (int i = 0; i < 2; i++)
     {
         for (int j = 0; j < size * 2; j++)
-            fscanf(fp, "%c", &sum[i][j]);
-        fscanf(fp, "%c", &star);
+        {
+            fread(&sum[i][j], sizeof(char), 1, arquivo);
+            offset++;
+        }
+        fread(&star, sizeof(char), 1, arquivo);
+        offset++;
     }
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
-            fscanf(fp, "%c", &correct[i][j]);
-        fscanf(fp, "%c", &star);
+        {
+            fread(&correct[i][j], sizeof(char), 1, arquivo);
+            offset++;
+        }
+        fread(&star, sizeof(char), 1, arquivo);
+        offset++;
     }
-    fscanf(fp, "%c", &star);
+    fread(&star, sizeof(char), 1, arquivo);
+    fread(&star, sizeof(char), 1, arquivo);
+    offset += 2;
+}
+
+void rankingUpdate()
+{
+    Jogador a;
+    int plrnumber = 0, found = 0;
+    if (fd != NULL)
+        fclose(fd);
+    fd = fopen("ranking.txt", "r");
+    while(fread(&a, sizeof(Jogador), 1, fd) != EOF)
+    {
+        plrnumber++;
+        if (strcmp(a.nome, player.nome) == 0)
+            plrnumber--;
+    }
+    plrnumber++;
+    Jogador current[plrnumber];
+    fclose(fd);
+    fd = fopen("ranking.txt", "r");
+    for (int i = 0; i < plrnumber; i++)
+    {
+        fread(&current[i], sizeof(Jogador), 1, fd);
+        if (strcmp(current[i].nome, player.nome) == 0)
+        {
+            found = 1;
+            current[i].pontuacao += player.pontuacao;
+        }
+    }
+    if (!found)
+        current[plrnumber - 1] = player;
+    else
+        found = 0;
+    fclose(fd);
+    // ordenar o ranking
+    qsort(&current[0], plrnumber, sizeof(Jogador), compare);
+    fd = fopen("ranking.txt", "w");
+    for (int i = 0; i < plrnumber; i++)
+    {
+        fwrite(&current[i], sizeof(Jogador), 1, fd);
+    }
+    // fechar o ranking e voltar para tela inicial
+    fclose(fd);
+    return;
+}
+
+int compare(const void *a, const void *b)
+{
+    int p1 = ((Jogador*)a)->pontuacao;
+    int p2 = ((Jogador*)b)->pontuacao;
+    if (p1 < p2)
+        return 1;
+    return -1;
 }
