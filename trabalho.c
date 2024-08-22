@@ -25,13 +25,14 @@ char mat_it[6][6], sum_it[2][12], cor_it[6][6];
 char mat_ad[7][7], sum_ad[2][14], cor_ad[7][7];
 
 int initialScreen();
-void load_m(FILE *fp, int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size], char *file);
+void load_m(FILE *arquivo, int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size], char *file);
 void begingame();
 void game_loop(int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size]);
 void displayconfig();
 void displayranking();
 void rankingUpdate();
 int compare(const void *a, const void *b);
+
 int main()
 {
     char temp;
