@@ -1,2 +1,1 @@
-Vitor 100
-Carla 50
+Davi 50

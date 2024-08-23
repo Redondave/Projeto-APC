@@ -14,7 +14,7 @@ int first = 1;
 int vidas = 5;
 int done = 0;
 int games = 0;
-long offset = 0;
+long offset;
 int x, y;
 FILE *fd = NULL;
 FILE *fp = NULL;
@@ -25,7 +25,7 @@ char mat_it[6][6], sum_it[2][12], cor_it[6][6];
 char mat_ad[7][7], sum_ad[2][14], cor_ad[7][7];
 
 int initialScreen();
-void load_m(FILE *arquivo, int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size], char *file);
+void load_m(int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size], char *file);
 void begingame();
 void game_loop(int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size]);
 void displayconfig();
@@ -99,21 +99,21 @@ void begingame()
         char *name = "iniciante.txt";
         int size = (games == 3) ? 5 : 4;
         if (games == 3)
-            load_m(fp, 5, cor_in2, mat_in2, sum_in2, name);
+            load_m(5, cor_in2, mat_in2, sum_in2, name);
         else
-            load_m(fp, 4, cor_in, mat_in, sum_in, name);
+            load_m(4, cor_in, mat_in, sum_in, name);
         game_loop(size, cor_in, mat_in, sum_in);
     }
     else if (DIFICULDADE == 2)
     {
         char *name = "intermediario.txt";
-        load_m(fp, 6, cor_it, mat_it, sum_it, name);
+        load_m(6, cor_it, mat_it, sum_it, name);
         game_loop(6, cor_it, mat_it, sum_it);
     }
     else if (DIFICULDADE == 3)
     {
         char *name = "avancado.txt";
-        load_m(fp, 7, cor_ad, mat_ad, sum_ad, name);
+        load_m(7, cor_ad, mat_ad, sum_ad, name);
         game_loop(7, cor_ad, mat_ad, sum_ad);
     }
     else
@@ -122,6 +122,7 @@ void begingame()
         scanf("%c", &star);
         exit(0);
     }
+    initialScreen();
 }
 
 void game_loop(int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size])
@@ -227,7 +228,6 @@ void game_loop(int size, char correct[size][size], char matriz[size][size], char
     }
     vidas = 5;
     rankingUpdate();
-    initialScreen();
 }
 
 void displayconfig()
@@ -269,7 +269,7 @@ void displayconfig()
     {
         printf("Voce quer apagar o ranking? [y/n]\n");
         scanf("%c", &confirm);
-        scanf("%c", &confirm);
+        scanf("%c", &star);
         if (tolower(confirm) == 'y')
         {
             fd = fopen("ranking.txt", "w");
@@ -312,48 +312,42 @@ void displayranking()
     initialScreen();
 }
 
-void load_m(FILE *arquivo, int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size], char* name)
+void load_m(int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size], char* name)
 {
-    if (arquivo == NULL)
+    if (fp == NULL)
     {
-        arquivo = fopen(name, "r");
+        fp = fopen(name, "r");
         offset = 0;
     }
     else
-        fseek(arquivo, offset, SEEK_SET);
+        fseek(fp, offset, SEEK_SET);
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
         {
-            fread(&matriz[i][j], sizeof(char), 1, arquivo);
-            offset++;
+            fread(&matriz[i][j], sizeof(char), 1, fp);
         }
-        fread(&star, sizeof(char), 1, arquivo);
-        offset++;
+        fread(&star, sizeof(char), 1, fp);
     }
     for (int i = 0; i < 2; i++)
     {
         for (int j = 0; j < size * 2; j++)
         {
-            fread(&sum[i][j], sizeof(char), 1, arquivo);
-            offset++;
+            fread(&sum[i][j], sizeof(char), 1, fp);
         }
-        fread(&star, sizeof(char), 1, arquivo);
-        offset++;
+        fread(&star, sizeof(char), 1, fp);
     }
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
         {
-            fread(&correct[i][j], sizeof(char), 1, arquivo);
-            offset++;
+            fread(&correct[i][j], sizeof(char), 1, fp);
         }
-        fread(&star, sizeof(char), 1, arquivo);
-        offset++;
+        fread(&star, sizeof(char), 1, fp);
     }
-    fread(&star, sizeof(char), 1, arquivo);
-    fread(&star, sizeof(char), 1, arquivo);
-    offset += 2;
+    fread(&star, sizeof(char), 1, fp);
+    fread(&star, sizeof(char), 1, fp);
+    offset = ftell(fp);
 }
 
 void rankingUpdate()
@@ -362,8 +356,8 @@ void rankingUpdate()
     int plrnumber = 0, found = 0;
     if (fd != NULL)
         fclose(fd);
-    fd = fopen("ranking.txt", "r");
-    while(fread(&a, sizeof(Jogador), 1, fd) != EOF)
+    fd = fopen("ranking.txt", "rb");
+    while(fscanf(fd, "%s %i", a.nome, &a.pontuacao) != EOF)
     {
         plrnumber++;
         if (strcmp(a.nome, player.nome) == 0)
@@ -372,10 +366,10 @@ void rankingUpdate()
     plrnumber++;
     Jogador current[plrnumber];
     fclose(fd);
-    fd = fopen("ranking.txt", "r");
+    fd = fopen("ranking.txt", "rb");
     for (int i = 0; i < plrnumber; i++)
     {
-        fread(&current[i], sizeof(Jogador), 1, fd);
+        fscanf(fd, "%s %i", current[i].nome, &current[i].pontuacao);
         if (strcmp(current[i].nome, player.nome) == 0)
         {
             found = 1;
@@ -389,10 +383,10 @@ void rankingUpdate()
     fclose(fd);
     // ordenar o ranking
     qsort(&current[0], plrnumber, sizeof(Jogador), compare);
-    fd = fopen("ranking.txt", "w");
+    fd = fopen("ranking.txt", "wb");
     for (int i = 0; i < plrnumber; i++)
     {
-        fwrite(&current[i], sizeof(Jogador), 1, fd);
+        fprintf(fd, "%s %i\n", current[i].nome, current[i].pontuacao);
     }
     // fechar o ranking e voltar para tela inicial
     fclose(fd);
