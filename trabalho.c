@@ -42,9 +42,9 @@ int main()
         printf("Digite Seu Nome: ");
         scanf("%[^\n]", player.nome);
         scanf("%c", &temp);
-        player.pontuacao = 0;
         first = 0;
     }
+    player.pontuacao = 0;
     initialScreen();
     return 0;
 }
@@ -122,7 +122,7 @@ void begingame()
         scanf("%c", &star);
         exit(0);
     }
-    initialScreen();
+    main();
 }
 
 void game_loop(int size, char correct[size][size], char matriz[size][size], char sum[2][2 * size])
