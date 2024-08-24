@@ -158,10 +158,14 @@ void game_loop(int size, char correct[size][size], char matriz[size][size], char
             index += 2;
         }
         printf("\n** VIDAS: %i **\n", vidas);
-        printf("Escolha a linha e coluna a serem apagadas: ");
-        scanf("%i %i", &x, &y);
-        x--;
-        y--;
+        do
+        {
+            printf("Escolha a linha e coluna a serem apagadas: ");
+            scanf("%i %i", &x, &y);
+            x--;
+            y--;
+        } while (correct[x][y] == ' ');
+
         // fazer o apagamento / erro
         if (correct[x][y] == '0')
         {
