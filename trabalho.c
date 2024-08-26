@@ -1,3 +1,5 @@
+// Projeto Final APC 2024.1, Davi Brasileiro Gomes, Mat: 241020741, Prof: Carla Denise Castanho
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -15,12 +17,12 @@ int vidas = 5;
 int done = 0;
 int games = 0;
 long offset;
+long offset_def;
 int x, y;
 FILE *fd = NULL;
 FILE *fp = NULL;
 char star;
 char mat_in[4][4], sum_in[2][8], cor_in[4][4];
-char mat_in2[5][5], sum_in2[5][5], cor_in2[5][5];
 char mat_it[6][6], sum_it[2][12], cor_it[6][6];
 char mat_ad[7][7], sum_ad[2][14], cor_ad[7][7];
 
@@ -35,10 +37,12 @@ int compare(const void *a, const void *b);
 
 int main()
 {
+    system("cls");
     char temp;
     // perguntar o nome do usuário
     if (first)
     {
+        printf("*** JOGO DAS SOMAS ***\n\n");
         printf("Digite Seu Nome: ");
         scanf("%[^\n]", player.nome);
         scanf("%c", &temp);
@@ -56,13 +60,13 @@ int initialScreen()
     char c;
     // mostrar o display da tela inicial
     printf("*** BEM VINDO ***\n");
-    printf("\n1 - Jogar\n2 - Configuracoes\n3 - Ranking\n4 - Sair\n");
+    printf("\n1 - Jogar\n2 - Instrucoes\n3 - Configuracoes\n4 - Ranking\n5 - Sair\n");
     printf("\nDigite a opcao desejada: ");
     while (1)
     {
     // obter o input do usuário para começar o jogo
         scanf("%i", &escolha);
-        if (escolha == 4)
+        if (escolha == 5)
         {
             if (fp != NULL)
                 fclose(fp);
@@ -70,10 +74,20 @@ int initialScreen()
                 fclose(fd);
             exit(0);
         }
-        else if (escolha == 3)
+        else if (escolha == 4)
             displayranking();
-        else if (escolha == 2)
+        else if (escolha == 3)
             displayconfig();
+        else if (escolha == 2)
+        {
+            system("cls");
+            printf("*** INSTRUCOES ***\n\n");
+            printf("Bem-vindo ao jogo das somas! Seu objetivo eh, dada uma matriz de numeros, fazer\ncom que cada coluna e linha tenha uma soma total igual ao numero mostrado nas bordas da matriz.\nPara isso, a cada rodada voce digitara as coordenadas de um numero na matriz para apaga-lo,\nde modo que a soma fique correta. Caso o numero apagado seja correto, a matriz sera\nredesenhada sem o numero apagado e o jogo prossegue, ate a conclusao.\nJa se o numero for incorreto, uma vida sera perdida, e assim sucessivamente ate o maximo de erros (5).\nA medida que o jogador avanca, tambem avanca a dificuldade e a pontuacao a cada vitoria, entao tente\nseu melhor para conquistar o ranking nesse desafio!\n\n");
+            printf("Pressione [Enter] para retornar\n");
+            scanf("%c", &c);
+            scanf("%c", &c);
+            initialScreen();
+        }
         else if (escolha == 1)
             begingame();
         else
@@ -92,17 +106,14 @@ void begingame()
     {
         games = 0;
         fclose(fp);
+        fp = NULL;
         DIFICULDADE++;
     }
     if (DIFICULDADE == 1)
     {
         char *name = "iniciante.txt";
-        int size = (games == 3) ? 5 : 4;
-        if (games == 3)
-            load_m(5, cor_in2, mat_in2, sum_in2, name);
-        else
-            load_m(4, cor_in, mat_in, sum_in, name);
-        game_loop(size, cor_in, mat_in, sum_in);
+        load_m(4, cor_in, mat_in, sum_in, name);
+        game_loop(4, cor_in, mat_in, sum_in);
     }
     else if (DIFICULDADE == 2)
     {
@@ -219,6 +230,8 @@ void game_loop(int size, char correct[size][size], char matriz[size][size], char
             scanf("%c", &conf);
             // salvar a pontuação no struct do usuario
             player.pontuacao += (DIFICULDADE * 50);
+            if (DIFICULDADE == 3)
+                player.pontuacao += 50;
             games++;
             done = 0;
             break;
@@ -228,10 +241,13 @@ void game_loop(int size, char correct[size][size], char matriz[size][size], char
     if (vidas == 0)
     {
         printf("As vidas acabaram... tente de novo outra vez\nPressione [Enter]...");
+        offset = offset_def;
+        done = 0;
         scanf("%c", &conf);
     }
     vidas = 5;
     rankingUpdate();
+    return;
 }
 
 void displayconfig()
@@ -302,15 +318,17 @@ void displayconfig()
 void displayranking()
 {
     printf("*** RANKING ***\n\n");
-    char confirm, nome[20];
-    int pont;
+    char confirm, nome[30];
     fd = fopen("ranking.txt", "r");
-    while (fscanf(fd, "%s %i", nome, &pont) != EOF)
+    if (fd != NULL)
     {
-        printf("%s %i\n", nome, pont);
+        while (fgets(nome, 30, fd) != NULL)
+        {
+            printf("%s\n", nome);
+        }
+        scanf("%c", &confirm);
+        fclose(fd);
     }
-    scanf("%c", &confirm);
-    fclose(fd);
     printf("\nPressione [Enter]...\n");
     scanf("%c", &confirm);
     initialScreen();
@@ -322,9 +340,13 @@ void load_m(int size, char correct[size][size], char matriz[size][size], char su
     {
         fp = fopen(name, "r");
         offset = 0;
+        offset_def = 0;
     }
     else
+    {
+        offset_def = ftell(fp);
         fseek(fp, offset, SEEK_SET);
+    }
     for (int i = 0; i < size; i++)
     {
         for (int j = 0; j < size; j++)
