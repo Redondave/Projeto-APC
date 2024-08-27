@@ -1,4 +1,5 @@
 // Projeto Final APC 2024.1, Davi Brasileiro Gomes, Mat: 241020741, Prof: Carla Denise Castanho
+// Algumas matrizes foram alteradas em funcao de somas incorretas nas matrizes espelho ou outros inconvenientes, mas o funcionamento do jogo se preserva.
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -9,6 +10,12 @@ typedef struct Jogador {
     char nome[20];
     int pontuacao;
 } Jogador;
+
+#ifdef WIN32
+    #define CLEAR "cls"
+#else
+    #define CLEAR "clear"
+#endif
 
 Jogador player;
 int DIFICULDADE = 1;
@@ -37,17 +44,14 @@ int compare(const void *a, const void *b);
 
 int main()
 {
-    system("cls");
+    system(CLEAR);
     char temp;
     // perguntar o nome do usuário
     if (first)
     {
         printf("*** JOGO DAS SOMAS ***\n\n");
         printf("Digite Seu Nome: ");
-        scanf("%[^\n]", player.nome);
-        int len = strlen(player.nome);
-        player.nome[len] = '\0';
-        scanf("%c", &temp);
+        fgets(player.nome, 20, stdin);
         first = 0;
     }
     player.pontuacao = 0;
@@ -57,7 +61,7 @@ int main()
 
 int initialScreen()
 {
-    system("cls");
+    system(CLEAR);
     int escolha;
     char c;
     // mostrar o display da tela inicial
@@ -70,10 +74,6 @@ int initialScreen()
         scanf("%i", &escolha);
         if (escolha == 5)
         {
-            if (fp != NULL)
-                fclose(fp);
-            if (fd != NULL)
-                fclose(fd);
             exit(0);
         }
         else if (escolha == 4)
@@ -82,7 +82,7 @@ int initialScreen()
             displayconfig();
         else if (escolha == 2)
         {
-            system("cls");
+            system(CLEAR);
             printf("*** INSTRUCOES ***\n\n");
             printf("Bem-vindo ao jogo das somas! Seu objetivo eh, dada uma matriz de numeros, fazer\ncom que cada coluna e linha tenha uma soma total igual ao numero mostrado nas bordas da matriz.\nPara isso, a cada rodada voce digitara as coordenadas de um numero na matriz para apaga-lo,\nde modo que a soma fique correta. Caso o numero apagado seja correto, a matriz sera\nredesenhada sem o numero apagado e o jogo prossegue, ate a conclusao.\nJa se o numero for incorreto, uma vida sera perdida, e assim sucessivamente ate o maximo de erros (5).\nA medida que o jogador avanca, tambem avanca a dificuldade e a pontuacao a cada vitoria, entao tente\nseu melhor para conquistar o ranking nesse desafio!\n\n");
             printf("Pressione [Enter] para retornar\n");
@@ -146,7 +146,7 @@ void game_loop(int size, char correct[size][size], char matriz[size][size], char
     while(vidas > 0)
     {
         // dar o clear na tela
-        system("cls");
+        system(CLEAR);
         int index = 0;
         // dar display da matriz
         for (int i = 0; i < size; i++)
@@ -254,7 +254,7 @@ void game_loop(int size, char correct[size][size], char matriz[size][size], char
 
 void displayconfig()
 {
-    system("cls");
+    system(CLEAR);
     int escolha;
     char confirm;
     printf("*** CONFIGURACOES ***\n");
@@ -320,13 +320,14 @@ void displayconfig()
 void displayranking()
 {
     printf("*** RANKING ***\n\n");
-    char confirm, nome[30];
+    char confirm;
+    Jogador atual;
     fd = fopen("ranking.txt", "r");
     if (fd != NULL)
     {
-        while (fgets(nome, 30, fd) != NULL)
+        while (fread(&atual, sizeof(Jogador), 1, fd) != 0)
         {
-            printf("%s\n", nome);
+            printf("%s %i\n", atual.nome, atual.pontuacao);
         }
         scanf("%c", &confirm);
         fclose(fd);
@@ -382,10 +383,8 @@ void rankingUpdate()
 {
     Jogador a;
     int plrnumber = 0, found = 0;
-    if (fd != NULL)
-        fclose(fd);
     fd = fopen("ranking.txt", "rb");
-    while(fscanf(fd, "%s %i", a.nome, &a.pontuacao) != EOF)
+    while(fread(&a, sizeof(Jogador), 1, fd) != 0)
     {
         plrnumber++;
         if (strcmp(a.nome, player.nome) == 0)
@@ -397,7 +396,7 @@ void rankingUpdate()
     fd = fopen("ranking.txt", "rb");
     for (int i = 0; i < plrnumber; i++)
     {
-        fscanf(fd, "%s %i", current[i].nome, &current[i].pontuacao);
+        fread(&current[i], sizeof(Jogador), 1, fd);
         if (strcmp(current[i].nome, player.nome) == 0)
         {
             found = 1;
@@ -414,7 +413,7 @@ void rankingUpdate()
     fd = fopen("ranking.txt", "wb");
     for (int i = 0; i < plrnumber; i++)
     {
-        fprintf(fd, "%s %i\n", current[i].nome, current[i].pontuacao);
+        fwrite(&current[i], sizeof(Jogador), 1, fd);
     }
     // fechar o ranking e voltar para tela inicial
     fclose(fd);
@@ -429,3 +428,4 @@ int compare(const void *a, const void *b)
         return 1;
     return -1;
 }
+
