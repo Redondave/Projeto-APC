@@ -1,2 +1,2 @@
-ana 300
-d 50
+davizap 50
+ana 50

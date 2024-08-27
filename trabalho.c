@@ -45,6 +45,8 @@ int main()
         printf("*** JOGO DAS SOMAS ***\n\n");
         printf("Digite Seu Nome: ");
         scanf("%[^\n]", player.nome);
+        int len = strlen(player.nome);
+        player.nome[len] = '\0';
         scanf("%c", &temp);
         first = 0;
     }
