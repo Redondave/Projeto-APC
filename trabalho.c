@@ -52,6 +52,8 @@ int main()
         printf("*** JOGO DAS SOMAS ***\n\n");
         printf("Digite Seu Nome: ");
         fgets(player.nome, 20, stdin);
+        int len = strlen(player.nome);
+        player.nome[len - 1] = '\0';
         first = 0;
     }
     player.pontuacao = 0;
