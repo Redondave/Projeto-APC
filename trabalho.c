@@ -179,7 +179,7 @@ void game_loop(int size, char correct[size][size], char matriz[size][size], char
             scanf("%i %i", &x, &y);
             x--;
             y--;
-        } while (correct[x][y] == ' ');
+        } while (correct[x][y] == ' ' || x < 1 || x > size || y < 1 || y > size);
 
         // fazer o apagamento / erro
         if (correct[x][y] == '0')
