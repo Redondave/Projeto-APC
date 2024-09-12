@@ -179,7 +179,7 @@ void game_loop(int size, char correct[size][size], char matriz[size][size], char
             scanf("%i %i", &x, &y);
             x--;
             y--;
-        } while (correct[x][y] == ' ' || x < 1 || x >= size || y < 1 || y >= size);
+        } while (correct[x][y] == ' ' || x < 0 || x > size - 1 || y < 0 || y > size - 1);
 
         // fazer o apagamento / erro
         if (correct[x][y] == '0')
@@ -331,10 +331,10 @@ void displayranking()
         {
             printf("%s %i\n", atual.nome, atual.pontuacao);
         }
-        scanf("%c", &confirm);
         fclose(fd);
     }
     printf("\nPressione [Enter]...\n");
+    scanf("%c", &confirm);
     scanf("%c", &confirm);
     initialScreen();
 }
